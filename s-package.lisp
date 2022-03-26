@@ -135,7 +135,7 @@
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (require :sb-cltl2))
 
-(defpackage #:series
+(defpackage #:zrseries
   (:use)
   (:export 
    ;;(2) readmacros (#M and #Z)
@@ -178,9 +178,9 @@
    ))
 
 
-(defpackage #:series-internals
-  (:use #:cl #:series)
-  (:nicknames #:seriesi)
+(defpackage #:zrseries-internals
+  (:use #:cl #:zrseries)
+  (:nicknames #:zrseriesi)
   (:shadowing-import-from #:cl
                           #:let #:let* #:multiple-value-bind #:funcall #:defun)
   (:shadow #+(or cmu scl) #:collect #+(or cmu scl) #:iterate)

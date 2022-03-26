@@ -819,7 +819,7 @@
 ;;;;
 ;;;; The companion file "SDOC.TXT" contains brief documentation.
 
-(in-package :seriesi)
+(in-package :zrseriesi)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   
@@ -855,7 +855,7 @@ value, the old value is not clobbered."
 
 
 (defconst-once /series-forms/
-  '(series:let series:let* series:multiple-value-bind series:funcall series:defun)
+  '(zrseries:let zrseries:let* zrseries:multiple-value-bind zrseries:funcall zrseries:defun)
   "Forms redefined by Series.")
 
 (declaim (declaration indefinite-extent))
@@ -1979,7 +1979,7 @@ value, the old value is not clobbered."
 
 (declaim (special *graph*               ;list of frags in expression
                   *renames*             ;alist of variable renamings
-                  *user-names*          ;series::let var names used by user
+                  *user-names*          ;zrseries::let var names used by user
                   *env*                 ;environment of containing series macro call
                   *call*                ;bound to whole form when running optimizer
                   *being-setqed*        ;T if in the assignment part of a setq
@@ -1991,15 +1991,15 @@ value, the old value is not clobbered."
 		  ))
 ;; DEBUG
 ;;
-;; With these two assigments you can use (SERIES::PROCESS-TOP <quoted form>)
+;; With these two assigments you can use (ZRSERIES::PROCESS-TOP <quoted form>)
 ;; to view series expansions:
-;; (setq series::*renames* nil) (setq series::*env* nil)
+;; (setq zrseries::*renames* nil) (setq zrseries::*env* nil)
 
 ;; *renames* has three kinds of entries on it.  Each is a cons of a
 ;; variable and something else: (type 1 cannot ever be setqed.)
 ;;
-;; 1- a ret, var is a series::let var or a series::lambda var.  You
-;; can tell between the two because series::lambda var frags are not
+;; 1- a ret, var is a zrseries::let var or a zrseries::lambda var.  You
+;; can tell between the two because zrseries::lambda var frags are not
 ;; in *graph*.
 ;;
 ;; 2- a new var, var is an aux var.
@@ -3294,7 +3294,7 @@ value, the old value is not clobbered."
                                                          (car (rets (fragify form t))))
                                                      (cdr expansion))))
                               (when (and (cdr rets) (some #'series-var-p rets))
-                                (rrs 7 "~%VALUES returns multiple series:~%" code))
+                                (rrs 7 "~%VALUES returns multiple zrseries:~%" code))
                               (annotate code (pass-through-frag rets))))
                            (t (annotate code (isolate-non-series
                                               (if (listp types)
@@ -3401,7 +3401,7 @@ value, the old value is not clobbered."
     (progv symbols values
       (e (if (null (cdr body))
 	     (car body)
-	   (list* 'series:let nil body))))))
+	   (list* 'zrseries:let nil body))))))
 
 (setf (get 'compiler-let 'scan-template) #'compiler-let-template)
 
@@ -5865,7 +5865,7 @@ value, the old value is not clobbered."
 
 (defun define-optimizable-series-fn (name lambda-list expr-list)
   (multiple-value-bind (form opt-p)
-			 (compute-optimizable-series-fn 'series::defun name lambda-list expr-list)
+			 (compute-optimizable-series-fn 'zrseries::defun name lambda-list expr-list)
     (if opt-p
 	(cons 'defS form)
       (cons 'defun form))))
@@ -5878,7 +5878,7 @@ value, the old value is not clobbered."
   name)
 
 ;; EXTENSION
-(defmacro series:defun (name lambda-list &environment *env* &body body)
+(defmacro zrseries:defun (name lambda-list &environment *env* &body body)
   (if (dolist (form body)
         (cond ((and (stringp form) (eq form (car body))))
               ((and (consp form) (eq-car form 'declare))
@@ -6364,7 +6364,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
 
 (defun gather-sanitize (collector)
   (let ((x (new-var 'gather)))
-    `#'(lambda (,x) (series:funcall ,collector (scan (collect ,x))))))
+    `#'(lambda (,x) (zrseries:funcall ,collector (scan (collect ,x))))))
 
 (defun gatherlet-1 (binder bindifier decls var-collector-pairs *env* body)
   (let* ((frags (mapcar #'(lambda (p) (frag-for-collector (cadr p) *env*))
@@ -6420,7 +6420,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
     (when (wrappers frag)
       (let ((x (new-var 'gather)))
         (setq frag (frag-for-collector
-                     `(lambda (,x) (series:funcall ,collector (scan (collect ,x))))
+                     `(lambda (,x) (zrseries:funcall ,collector (scan (collect ,x))))
                      *env*))))
     (gathererify frag)))
 
@@ -6546,7 +6546,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
 		    (multiple-value-setq (code flag) (macroexpand-1 code *env*)))))))))
 
 ;; EXTENSION
-(defS series:funcall (function &rest expr-list) "" funcall
+(defS zrseries:funcall (function &rest expr-list) "" funcall
  :optimizer
   (cond ((and (eq-car function 'function) (symbolp (cadr function))
               (get (cadr function) 'series-optimizer))
@@ -6623,7 +6623,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
     frag))
 
 ;; EXTENSION
-(defS series:multiple-value-bind (vars values &rest body) "" multiple-value-bind
+(defS zrseries:multiple-value-bind (vars values &rest body) "" multiple-value-bind
  :optimizer
   (multiple-value-bind (forms type-alist ignore-vars opt-decls)
       (decode-dcls body '(types ignores generic-opts))
@@ -6636,12 +6636,12 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
  :discriminator (produces-optimizable-series (car (last call))))
 
 (setf (get 'multiple-value-bind 'series-optimizer)
-      (get 'series:multiple-value-bind 'series-optimizer))
+      (get 'zrseries:multiple-value-bind 'series-optimizer))
 (setf (get 'multiple-value-bind 'returns-series)
-      (get 'series:multiple-value-bind 'returns-series))
+      (get 'zrseries:multiple-value-bind 'returns-series))
 
 ;; EXTENSION
-(defS series:let (pairs &rest body) "" let
+(defS zrseries:let (pairs &rest body) "" let
  :optimizer
   (multiple-value-bind (forms type-alist ignore-vars opt-decls)
       (decode-dcls body '(types ignores generic-opts))
@@ -6657,11 +6657,11 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
       (return t)))
  :discriminator (produces-optimizable-series (car (last call))))
 
-(setf (get 'let 'series-optimizer) (get 'series:let 'series-optimizer))
-(setf (get 'let 'returns-series) (get 'series:let 'returns-series))
+(setf (get 'let 'series-optimizer) (get 'zrseries:let 'series-optimizer))
+(setf (get 'let 'returns-series) (get 'zrseries:let 'returns-series))
 
 ;; EXTENSION
-(defS series:let* (pairs &rest body) "" let*
+(defS zrseries:let* (pairs &rest body) "" let*
  :optimizer
   (multiple-value-bind (forms type-alist ignore-vars opt-decls)
       (decode-dcls body '(types ignores generic-opts))
@@ -6678,8 +6678,8 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
       (return t)))
  :discriminator (produces-optimizable-series (car (last call))))
 
-(setf (get 'let* 'series-optimizer) (get 'series:let* 'series-optimizer))
-(setf (get 'let* 'returns-series) (get 'series:let* 'returns-series))
+(setf (get 'let* 'series-optimizer) (get 'zrseries:let* 'series-optimizer))
+(setf (get 'let* 'returns-series) (get 'zrseries:let* 'returns-series))
 
 ;; Next we have the definitions of the basic higher order functions.
 
@@ -6721,7 +6721,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
 ;;
 ;; This makes code for `(multiple-value-setq ,out-vars (funcall ,fn ,@
 ;; in-vars)). It always returns a list of a single statement.  Also,
-;; any free references to series::let vars are made non-series inputs
+;; any free references to zrseries::let vars are made non-series inputs
 ;; of frag and hooked up to the right things.  (Note macro expansion
 ;; has to be done in a nested context so that nested series
 ;; expressions will be ok.) (Note also that this has to bypass what
@@ -7684,7 +7684,7 @@ valid way to use the variable in the body is in a call on NEXT-IN.
 				   nil ; series dataflow constraint takes care
 				   ))))
       (unless form
-        (ers 65 "~%Alter applied to an unalterable series:~%" *call*)) 
+        (ers 65 "~%Alter applied to an unalterable zrseries:~%" *call*)) 
       (setf (body frag) (list (subst (var (cadr (args frag))) '*alt* form)))
       (apply-frag frag (list ret items))))
   :trigger t)
@@ -7717,7 +7717,7 @@ valid way to use the variable in the body is in a call on NEXT-IN.
 				   nil ; series dataflow constraint takes care
 				   ))))
       (unless all-forms
-	(ers 65 "~%Alter applied to an unalterable series:~%" *call*))
+	(ers 65 "~%Alter applied to an unalterable zrseries:~%" *call*))
       ;; Look through all forms that match and do the appropriate
       ;; thing so that the body has all alterable forms we need.  See
       ;; comments for FIND-ALTER-FORMS.
@@ -9593,7 +9593,7 @@ has zero length."
 ;;; not a constant) is given a type declaration whereas inputs are
 ;;; never given types.  This ensures that everything is given a type
 ;;; definition and only once.  The only exception is that a user can
-;;; use a type decl in a series::let which will then override the
+;;; use a type decl in a zrseries::let which will then override the
 ;;; default type.  You can also wrap a (THE TYPE ...) around any
 ;;; series function call to override the types of the output.
 
