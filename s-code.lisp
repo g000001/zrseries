@@ -8526,7 +8526,7 @@ Creates a series of the symbols in PACKAGE (which defaults to *PACKAGE*)."
                     ; and constrained by thread sync and package operations
 
 ;; API
-(defS scan-file (name &optional (reader #'read))
+(defS scan-file (name &optional (reader #'read) &key (external-format :default))
   "(scan-file file-name &optional (reader #'read)
 
 SCAN-FILE opens the file named by the string FILE-NAME and applies the
@@ -8539,42 +8539,42 @@ a series of the values returned by READER, up to but not including the
 value returned when the end of the file is reached. The file is
 correctly closed, even if an abort occurs. "
   (fragl ((name) (reader)) ((items t))
-         ((items t)
-          (lastcons cons (list nil))
-          (lst list))
-         ()
+	 ((items t)
+	  (lastcons cons (list nil))
+	  (lst list))
+	 ()
          ((setq lst lastcons)
-          (with-open-file (f name :direction :input)
+	  (with-open-file (f name :direction :input :external-format external-format)
             (let ((done (list nil)))
               (loop
                  (let ((item (funcall reader f nil done)))
                    (when (eq item done)
                      (return nil))
-                   (setq lastcons (setf (cdr lastcons) (cons item nil)))))))
-          (setq lst (cdr lst)))
+		   (setq lastcons (setf (cdr lastcons) (cons item nil)))))))
+	  (setq lst (cdr lst)))
          ((if (null lst) (go end))
           (setq items (car lst))
           (setq lst (cdr lst)))
-         ()
-         ()
-         :context)                      ; file can change
+	 ()
+	 ()
+	 :context)                      ; file can change
                                         ; Movement should only be allowed if no unknown functions
                                         ; and constrained by sync and file operations
   :optimizer
   (apply-literal-frag
    (let ((file (new-var 'file)))
      `((((reader)) ((items t))
-        ((items t) (done t (list nil)))
-        ()
+	((items t) (done t (list nil)))
+	()
         ()
         ((if (eq (setq items (funcall reader ,file nil done)) done)
              (go end)))
-        ()
+	()
         ((#'(lambda (code)
               (list 'with-open-file
-                    '(,file ,name :direction :input)
+                    '(,file ,name :direction :input :external-format ,external-format)
                     code)) :loop))
-        :context)
+	:context)
        ,reader))))
 
 ;; API
