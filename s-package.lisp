@@ -123,15 +123,6 @@
 ;;; if you don't have this you need to make the LISP package have CL
 ;;; as a nickname somehow, in any case.
 ;;;
-#+gcl
-(eval-when (compile load eval)
-  (unless (find-package "CL")
-    (rename-package "LISP" "COMMON-LISP" '("LISP" "CL"))))
-
-;;; Note this is really too early, but we need it here
-#+(or draft-ansi-cl draft-ansi-cl-2 ansi-cl allegro cmu scl sbcl Genera Harlequin-Common-Lisp CLISP mcl ccl)
-(cl:eval-when (load eval compile)
-  (cl:pushnew ':series-ansi cl:*features*))
 
 #+allegro
 (cl:eval-when(compile load eval)
@@ -203,56 +194,3 @@
   #+ecl
   (:import-from "SI" "COMPILER-LET")
 )
-
-#-(or series-ansi)
-(export ;74 total concepts in the interface
-  '(;(2) readmacros (#M and #Z)
-
-    ;(5) declarations and types (note dual meaning of series)
-    indefinite-extent
-    optimizable-series-function off-line-port ;series
-    series-element-type propagate-alterability
-
-    ;(10) special functions
-    alter to-alter encapsulated terminate-producing
-    next-in next-out generator gatherer result-of 
-    gather-next gather-result fgather-next fgather-result
-    gathering fgathering gatherlet fgatherlet
-
-    ;(55) main line functions
-    make-series series scan scan-multiple scan-range scan-sublists scan-fn
-    scan-fn-inclusive scan-lists-of-lists scan-lists-of-lists-fringe scan-file
-    scan-stream scan-hash scan-alist scan-plist scan-symbols collect-fn collect
-    collect-append collect-nconc collect-file collect-alist collect-plist
-    collect-hash collect-length
-    collect-sum collect-product collect-max collect-min
-    collect-last collect-first collect-nth collect-and collect-or
-    previous map-fn iterate mapping collecting-fn cotruncate
-    latch until until-if positions choose choose-if
-    spread expand mask subseries mingle catenate split split-if
-    producing chunk 
-
-    ;(5) variables
-    *series-expression-cache*
-    *last-series-loop*
-    *last-series-error*
-    *suppress-series-warnings*))
-
-#-(or series-ansi)
-(eval-when (compile load eval)
-  (in-package "SERIES" :use '("LISP"))
-  (shadow '(let let* multiple-value-bind funcall defun eval-when #+(or cmu scl) collect #+(or cmu scl) iterate))
-) ; end of eval-when
-
-#-(or series-ansi)
-(cl:eval-when (compile load eval)
-  (defmacro eval-when ((&rest times) &body body)
-    `(cl:eval-when ,(append
-		     (when (member :compile-toplevel times)
-		       '(compile))
-		     (when (member :load-toplevel times)
-		       '(load))
-		     (when (member :execute times)
-		       '(eval)))
-       ,@body))
-) ; end of eval-when

@@ -803,7 +803,6 @@
 ;;;; as possible. It has been tested on the following Common Lisps to
 ;;;; date (1/18/89).
 ;;;;
-;;;;   Symbolics CL version 8.
 ;;;;   LUCID CL version 3.0.2 on a sun.
 ;;;;   Allegro CL version 1.2.1 on a Macintosh.
 ;;;;   LispWorks CL version 2.1.
@@ -820,13 +819,7 @@
 ;;;;
 ;;;; The companion file "SDOC.TXT" contains brief documentation.
 
-#+(and series-ansi)
 (in-package :series)
-
-#-(or series-ansi)
-(eval-when (compile load eval)
-  (in-package "SERIES")
-) ; end of eval-when
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   
@@ -866,9 +859,6 @@ value, the old value is not clobbered."
 (defconst-once /series-forms/
   '(let let* multiple-value-bind funcall defun)
   "Forms redefined by Series.")
-
-#+:gcl
-(declaim (declaration dynamic-extent)) ; Man, is GCL broken!
 
 (declaim (declaration indefinite-extent))
 
@@ -3241,8 +3231,7 @@ value, the old value is not clobbered."
    e.g., they have the same template as expr-template.")
 
 (cl:defun not-expr-like-special-form-p (sym)
-  (and #-series-ansi(special-form-p sym)
-       #+series-ansi(special-operator-p sym)
+  (and (special-operator-p sym)
        (not (member sym /expr-like-special-forms/))))
 
 
@@ -3623,13 +3612,6 @@ value, the old value is not clobbered."
 
 (deft               locally (q)   (e))
 
-#+symbolics
-(cl:eval-when (eval load)
-  (cl:defun WSLB (list)
-    (prog1 (EX list) (push (list (car list)) *renames*)))
-  (deft                LET-IF (Q E B) (E))
-  (deft   scl:WITH-STACK-LIST (Q WSLB) (E))
-  (deft  scl:WITH-STACK-LIST* (Q WSLB) (E)))
 
 ;;;                        ---- TYPE HANDLING ----
 
@@ -4453,7 +4435,9 @@ value, the old value is not clobbered."
                  ((and (eq-car var-type 'complex)
                        (cdr var-type))
                   ;; Can find elem-type.
-                  (complex (coerce-maybe-fold 0 (cadr var-type))))
+                  #-lispworks8 (complex (coerce-maybe-fold 0 (cadr var-type)))
+                  #+lispworks8 (coerce (coerce-maybe-fold 0 (cadr var-type)) 'complex) ;lispwork8 bug
+                  )
                  (t
 		  nil
                   ;; BUG: Can't find elem-type, hope COERCE knows better.
@@ -6099,12 +6083,6 @@ value, the old value is not clobbered."
            `(cl:defun ,name ,lambda-list
               . ,body))))
 
-#+symbolics(setf (gethash 'defun zwei:*lisp-indentation-offset-hash-table*)
-                 '(2 1))
-#+Symbolics
-(setf (get 'defun 'zwei:definition-function-spec-parser)
-      (get 'cl:defun 'zwei:definition-function-spec-parser))
-
 
 ;;;;                          ---- DEFS ----
 ;;;; Macro to define arbitrary SERIES functions.
@@ -6125,12 +6103,11 @@ value, the old value is not clobbered."
   (cl:defun compute-series-macform-2 (name arglist doc body-code trigger 
 					   local-p disc-expr opt-expr
 					   unopt-expansion)
-   #-:symbolics (declare (ignore arglist))
+    (declare (ignore arglist))
    (cl:let ((unopt (if (symbolp body-code)
 		       `(cons ',body-code stuff)
 		     unopt-expansion)))
      `(,name (&whole call &rest stuff &environment *env*)
-	#+:symbolics (declare (zl:arglist ,@(copy-list arglist)))
 	,@(when doc (list doc))
 	,(if trigger
 	   `(if ,(if (eq trigger t)
@@ -6343,7 +6320,6 @@ value, the old value is not clobbered."
 ) ;end of eval-when for fragl-1
 
 (defmacro fragl (&rest stuff)
-  #+symbolics (declare (scl:arglist args rets aux alt prolog body epilog wraprs))
   #-:series-plain
   (fragl-1 stuff)
   #+:series-plain
@@ -6355,7 +6331,6 @@ value, the old value is not clobbered."
 	   )))
 
 (defmacro *fragl (&rest stuff)
-  #+symbolics (declare (scl:arglist args rets aux alt prolog body epilog wraprs))
   #-:series-plain
   (*fragl-1 stuff)
   #+:series-plain
@@ -6870,10 +6845,6 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
  :trigger (produces-optimizable-series (caddr call))
  :discriminator (produces-optimizable-series (car (last call))))
 
-#+symbolics(setf (gethash 'multiple-value-bind
-                          zwei:*lisp-indentation-offset-hash-table*)
-                 '(1 3 2 1))
-
 (setf (get 'cl:multiple-value-bind 'series-optimizer)
       (get 'multiple-value-bind 'series-optimizer))
 (setf (get 'cl:multiple-value-bind 'returns-series)
@@ -6896,9 +6867,6 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
       (return t)))
  :discriminator (produces-optimizable-series (car (last call))))
 
-#+symbolics(setf (gethash 'let zwei:*lisp-indentation-offset-hash-table*)
-                 '(1 1))
-
 (setf (get 'cl:let 'series-optimizer) (get 'let 'series-optimizer))
 (setf (get 'cl:let 'returns-series) (get 'let 'returns-series))
 
@@ -6919,9 +6887,6 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
     (when (and (consp pair) (cdr pair) (produces-optimizable-series (cadr pair)))
       (return t)))
  :discriminator (produces-optimizable-series (car (last call))))
-
-#+symbolics(setf (gethash 'let* zwei:*lisp-indentation-offset-hash-table*)
-                 '(1 1))
 
 (setf (get 'cl:let* 'series-optimizer) (get 'let* 'series-optimizer))
 (setf (get 'cl:let* 'returns-series) (get 'let* 'returns-series))
@@ -7483,9 +7448,6 @@ are discarded."
   `(iterate-mac ,var-value-list ,@ body)
  :trigger t)
 
-#+symbolics(setf (gethash 'iterate zwei:*lisp-indentation-offset-hash-table*)
-                 '(1 1))
-
 ;; API
 (defS mapping (var-value-list &rest body)
     "(mapping ({({var | ({var}*)} value)}*) {declaration}* {form}*)
@@ -7508,10 +7470,6 @@ result of mapping."
        `((map-fn t #'(lambda ,(mapcar #'car bindings) ,@ body)
                ,@(mapcar #'car bindings)))
        bindings)))
-
-#+symbolics
-(setf (gethash 'mapping zwei:*lisp-indentation-offset-hash-table*)
-      '(1 1))
 
 ;; only used when optimization not possible.
 (defmacro mapping-mac (var-value-list &body body)
@@ -7796,10 +7754,6 @@ valid way to use the variable in the body is in a call on NEXT-IN.
    (dolist (pair (cadr call) nil)
      (when (not (consp pair))
        (return t))))
-
-#+symbolics
-(setf (gethash 'producing zwei:*lisp-indentation-offset-hash-table*)
-      '(2 1))
 
 (defmacro terminate-producing ()
     "Causes the containing call on producing to terminate."
@@ -8762,7 +8716,6 @@ returns non-NIL if a node is a leaf node."
 	   :mutable)))
 
 ;; API
-#-symbolics
 (defS scan-symbols (&optional (package nil))
   "(scan-symbols (&optional (package *package*))
 
@@ -8778,25 +8731,6 @@ Creates a series of the symbols in PACKAGE (which defaults to *PACKAGE*)."
 	 ()
 	 ()
 	 :context)) ; package can change -
-                    ; Movement should only be allowed if no unknown functions
-                    ; and constrained by thread sync and package operations
-
-;; API
-#+symbolics ;see do-symbols
-(defS scan-symbols (&optional (package nil))
-    "Creates a series of the symbols in PACKAGE."
-  (fragl ((package))
-	 ((symbols t))
-	 ((index t) (state t) (symbols symbol))
-	 ()
-         ((multiple-value-setq (index symbols state)
-            (si:loop-initialize-mapatoms-state (or package *package*) nil)))
-         ((if (multiple-value-setq (nil index symbols state)
-                (si:loop-test-and-step-mapatoms index symbols state))
-              (go end)))
-	 ()
-	 ()
-	 :context)) ; package can change
                     ; Movement should only be allowed if no unknown functions
                     ; and constrained by thread sync and package operations
 
@@ -8932,7 +8866,6 @@ order of scanning the hash table is not specified."
 	 :mutable ; table can change - OK if scan-private table
 	 )
   :optimizer
-  #-symbolics
   (apply-literal-frag
     (cl:let ((next (new-var 'next)))
       `((() ; args
@@ -8953,21 +8886,6 @@ order of scanning the hash table is not specified."
 	   :loop))
 	 :mutable ; impure
 	 ))))
-
-  #+symbolics
-  (apply-literal-frag
-    `((((table))
-       ((keys t) (values t))
-       ((state t nil) (keys t) (values t))
-       ()
-       ()
-       ((if (not (multiple-value-setq (state keys values)
-                   (si:send table :next-element state)))
-            (go end))) ()
-       ((#'(lambda (c) `(si:inhibit-gc-flips ,c)) :loop))
-       :mutable ; table can change - OK if scan-private table
-       )
-      ,table))
   )
 
 ;; API
@@ -9938,4 +9856,3 @@ has zero length."
 ;;;    SOFTWARE.
 
 ;;; -------------------------------------------------------------------------
-
