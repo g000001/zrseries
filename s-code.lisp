@@ -7184,12 +7184,14 @@ part of the output."
 
 ;; CODEGEN
 (defun mapit (type fn args)
-  (if (not (symbolp fn))
-      `(map-fn ',type (function ,fn) ,@ args)
-      (let ((vars (do ((a args (cdr a))
-                       (l nil (cons (gensym "V-") l)))
-                      ((null a) (return l)))))
-        `(map-fn ',type (function (lambda ,vars (,fn ,@ vars))) ,@ args))))
+  (etypecase fn
+    (cons (case (car fn)
+            ((setf lambda) `(map-fn ',type (function ,fn) ,@ args))
+            (otherwise `(map-fn ',type ,fn ,@ args))))
+    (symbol (let ((vars (do ((a args (cdr a))
+                             (l nil (cons (gensym "V-") l)))
+                            ((null a) (return l)))))
+              `(map-fn ',type (function (lambda ,vars (,fn ,@ vars))) ,@ args)))))
 
 ;; put on #M
 (defun abbreviated-map-fn-reader (stream subchar arg)
