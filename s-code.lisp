@@ -3065,7 +3065,7 @@ value, the old value is not clobbered."
 
 (defconst-once /fexprs-not-handled/ '(flet labels #-:lispworks macrolet))
 
-(defconst-once /expr-like-special-forms/
+(defconst-once /expr-like-special-operators/
   '(multiple-value-call multiple-value-prog1 progn progv the throw)
   "special forms that can be treated like ordinary functions.
    e.g., they have the same template as expr-template.")
@@ -3073,7 +3073,7 @@ value, the old value is not clobbered."
 (defun not-expr-like-special-operator-p (sym)
   (and (symbolp sym)
        (special-operator-p sym)
-       (not (member sym /expr-like-special-forms/))))
+       (not (member sym /expr-like-special-operators/))))
 
 (defun m-&-r2 (code template)
   (if (not (listp template))
