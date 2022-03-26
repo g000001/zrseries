@@ -2111,177 +2111,141 @@ value, the old value is not clobbered."
   (eq (wrapper-type w) :epilog))
 
 (progn
+
   ;;; Prologs
   
   (defmacro doprolog ((v prologs) &body body)
-    (let ((b (gensym)))
-      `(dolist (,b ,prologs)
-	 (dolist (,v ,b)
-	   ,@body))))
+    `(dolist (,v ,prologs)
+       ,@body))
 
   (declaim (inline makeprolog))
   (defun makeprolog (prologlist)
-    (when prologlist
-      (list prologlist)))	  
+    prologlist)	  
 
   (declaim (inline flatten-prolog))
   (defun flatten-prolog (prologs)
-    (apply #'append prologs))
+    prologs)
 
   (declaim (inline mapprolog))
-  (defun mapprolog (fun prologs)	  
-    (mapcan #'(lambda (b) (mapcar fun b)) prologs))
+  (defun mapprolog (fun prologs)
+    (mapcar fun prologs))
 
   (declaim (inline 2mapprolog))
-  (defun 2mapprolog (fun prologs)	  
-    (2mapcar #'(lambda (b) (2mapcar fun b)) prologs))
+  (defun 2mapprolog (fun prologs)
+    (2mapcar fun prologs))
 
   (declaim (inline 3mapprolog))
-  (defun 3mapprolog (fun prologs)	  
-    (3mapcar #'(lambda (b) (3mapcar fun b)) prologs))
+  (defun 3mapprolog (fun prologs)
+    (3mapcar fun prologs))
 
   (declaim (inline first-prolog-block))
   (defun first-prolog-block (prologs)
-    (car prologs))
+    prologs)
 
   (declaim (inline last-prolog-block))
   (defun last-prolog-block (prologs)
-    (car (last prologs)))
+    prologs)
 
-  (defun add-prolog (frag p)
-    (let ((prologs (prolog frag)))
-      (if prologs
-	  (progn
-	    (push p
-		  (car prologs))
-	    prologs)
-	(setf (prolog frag) (makeprolog (list p))))))
-
-  (defun prolog-append (prologs l)
-    (if l
-	(if prologs
-	    (let* ((p (copy-list prologs))
-		      (la (last p)))
-	      (rplaca la (append (car la) l))
-	      p)
-	  (makeprolog l))
-      prologs))
-  
-  (defun prolog-length (p)
-    (let ((x 0))
-      (dolist (l p)
-	(setq x (+ x (length l))))
-      x))
-
-  (declaim (inline merge-prologs))
-  (defun merge-prologs (p1 p2)
-    (nmerge p1 p2))
-  
   (declaim (inline find-prolog))
   (defun find-prolog (var prologs)
-    (dolist (b prologs)
-      (when-bind (a (assoc var b))
-        (return a))))	       
+    (assoc var prologs))
 
   (declaim (inline delete-prolog))
   (defun delete-prolog (var prologs)
-    (mapcar #'(lambda (b) (delete var b :key #'car)) prologs))
+    (delete var prologs :key #'car))
 
   (declaim (inline delete-last-prolog))
   (defun delete-last-prolog (prologs)
-    (let ((l (last prologs)))
-      (rplaca l (nbutlast (car l)))
-      prologs))
+    (nbutlast prologs))
+
+  (declaim (inline delete-prolog-if))
+  (defun delete-prolog-if (p prologs)
+    (delete-if p prologs))
 
   (declaim (inline remove-prolog-if))
   (defun remove-prolog-if (p prologs)
-    (mapcar #'(lambda (b) (remove-if p b)) prologs))
+    (remove-if p prologs))
 
+  (declaim (inline add-prolog))
+  (defun add-prolog (frag p)
+    (push p (prolog frag)))
 
-  ;;; Local variable handling (Auxs)
+  (declaim (inline prolog-append))
+  (defun prolog-append (p l)
+    (append p l))
+  
+  (declaim (inline prolog-length))
+  (defun prolog-length (p)
+    (length p))
+
+  (declaim (inline merge-prologs))
+  (defun merge-prologs (p1 p2)
+    (nconc p1 p2))
+  
+  ;;; Auxs
 
   (defmacro doaux ((v auxs) &body body)
-    (let ((b (gensym)))
-      `(dolist (,b ,auxs)
-	 (dolist (,v ,b)
-	   ,@body))))
+    `(dolist (,v ,auxs)
+       ,@body))
 
   (declaim (inline makeaux))
   (defun makeaux (auxlist)
-    (when auxlist
-      (list auxlist)))	  
+    auxlist)	  
 
   (declaim (inline flatten-aux))
   (defun flatten-aux (auxs)
-    (apply #'append auxs))
+    auxs)
 
   (declaim (inline mapauxn))
-  (defun mapauxn (fun auxs)	  
-    (mapcan #'(lambda (b) (mapcar fun b)) auxs))
+  (defun mapauxn (fun auxs)
+    (mapcar fun auxs))
 
   (declaim (inline mapaux))
-  (defun nmapaux (fun auxs)	  
-    (mapcar #'(lambda (b) (mapcan fun b)) auxs))
+  (defun nmapaux (fun auxs)
+    (mapcan fun auxs))
 
   (declaim (inline mapaux))
-  (defun mapaux (fun auxs)	  
-    (mapcar #'(lambda (b) (mapcar fun b)) auxs))
+  (defun mapaux (fun auxs)
+    (mapcar fun auxs))
 
   (declaim (inline 2mapaux))
-  (defun 2mapaux (fun auxs)	  
-    (2mapcar #'(lambda (b) (2mapcar fun b)) auxs))
+  (defun 2mapaux (fun auxs)
+    (2mapcar fun auxs))
 
   (declaim (inline 3mapaux))
-  (defun 3mapaux (fun auxs)	  
-    (3mapcar #'(lambda (b) (3mapcar fun b)) auxs))
+  (defun 3mapaux (fun auxs)
+    (3mapcar fun auxs))
 
   (declaim (inline first-aux-block))
   (defun first-aux-block (auxs)
-    (car auxs))
-
-  (defun add-aux (frag var typ &optional (val nil val-p))
-    (let ((auxs (aux frag))
-	     (entry (if val-p
-			`(,var ,typ ,val)
-		      `(,var ,typ))))
-      (if auxs
-	  (progn
-	    (push entry
-		  (car auxs))
-	    auxs)
-	(setf (aux frag) (makeaux (list entry))))))
+    auxs)
 
   (declaim (inline find-aux))
   (defun find-aux (var auxs)
-    (dolist (b auxs)
-      (when-bind (a (assoc var b))
-        (return a))))	       
+    (assoc var auxs))
 
   (declaim (inline delete-aux))
   (defun delete-aux (var auxs)
-    (mapcar #'(lambda (b) (delete var b :key #'car)) auxs))
+    (delete var auxs :key #'car))
 
   (declaim (inline delete-aux-if))
   (defun delete-aux-if (p auxs)
-    (mapcar #'(lambda (b) (delete-if p b)) auxs))
-
-  (declaim (inline delete-aux-if-not))
-  (defun delete-aux-if-not (p auxs)
-    (mapcar #'(lambda (b) (remove-if-not p b)) auxs))
+    (delete-if p auxs))
 
 #|  
   (declaim (inline remove-aux-if))
   (defun remove-aux-if (p auxs)
-    (mapcar #'(lambda (b) (remove-if p b)) auxs))
-
-  (declaim (inline remove-aux-if-not))
-  (defun remove-aux-if-not (p auxs)
-    (mapcar #'(lambda (b) (remove-if-not p b)) auxs))
+    (remove-if p auxs))
 |#
   (declaim (inline segregate-aux))
   (defun segregate-aux (p auxs)
-    (2mapcar #'(lambda (b) (values (remove-if-not p b) (remove-if p b))) auxs))
+    (values (remove-if-not p auxs) (remove-if p auxs)))
 
+  (defun add-aux (frag var typ &optional (val nil val-p))
+    (push (if val-p
+	      `(,var ,typ ,val)
+	    `(,var ,typ))
+	  (aux frag)))
   )
 
 ;;; Prologs
@@ -2305,7 +2269,8 @@ value, the old value is not clobbered."
   (add-aux frag var typ val))
 
 (defun add-nonliteral-aux (frag var typ val)
-  (add-aux frag var typ val))
+  (add-aux frag var typ)
+  (push `(setq ,var ,val) (prolog frag)))
 
 (defun simplify-aux (auxs)
   (mapaux #'(lambda (v)
@@ -2505,7 +2470,7 @@ value, the old value is not clobbered."
 	       (return t))))))
 
 (defun prolog-branches-to (label frag)
-  (some #'(lambda (p) (branches-to label p)) (prolog frag)))
+  (branches-to label (prolog frag)))
 
 (defun active-terminator-p (frag)
   (or (prolog-branches-to end frag)
@@ -2666,50 +2631,9 @@ value, the old value is not clobbered."
 ;; positions would be correct in all implementations. 
 (defun merge-frags (frag1 frag2)
   (when (must-run frag1) (setf (must-run frag2) t))
-
-  (let ((a1 (aux frag1))
-	   (a2 (aux frag2))
-	   (p1 (prolog frag1))
-	   (p2 (prolog frag2)))
-    (if (some #'(lambda (i)
-		  (some #'(lambda (o)
-			    (member i (nxts o)))
-			(rets frag1)))
-	      (args frag2))
-	(progn
-	  (when (or p1 p2)
-	    (setf (prolog frag2)
-		  (nconc (if a1
-			     (or p1 (make-list (length a1)))
-			   p1)
-			 (if a2
-			     (or p2 (make-list (length a2)))
-			   p2))))
-
-	  (when (or a1 a2)	
-	    (setf (aux frag2)
-		  (nconc (if p1
-			     (or a1 (make-list (length p1)))
-			   a1)
-			 (if p2
-			     (or a2 (make-list (length p2)))
-			   a2)))))
-      (progn
-	  (setf (prolog frag2)
-		(noverlap 1 (if a1
-				(or p1 (make-list (length a1)))
-			      p1)
-			  (if a2
-			      (or p2 (make-list (length a2)))
-			    p2)))
-	  (setf (aux frag2)
-		(noverlap 1 (if p1
-				(or a1 (make-list (length p1)))
-			      a1)
-			  (if p2
-			      (or a2 (make-list (length p2)))
-			    a2))))))
-
+  (progn
+    (setf (aux frag2)  (nconc (aux frag1)  (aux frag2)))
+    (setf (prolog frag2)    (nconc (prolog frag1)    (prolog frag2))))
   (mapc #'(lambda (s) (setf (fr s) frag2)) (rets frag1))
   (mapc #'(lambda (s) (setf (fr s) frag2)) (args frag1))
   (setf (args frag2) (nconc (args frag1) (args frag2)))
@@ -4359,8 +4283,7 @@ value, the old value is not clobbered."
 		       ((not (and (consp tt) (consp (cdr tt)))) nil)
 		     (clean-code2 tt (cdr tt) (cadr tt))))))
       (declare (dynamic-extent #'clean-code2))
-      (dolist (p prologs)
-        (clean-code2 nil nil p))      
+      (clean-code2 nil nil prologs)
       (clean-code2 nil nil code) ;depends on code not being setq at top.
       dead)))
 
@@ -4375,29 +4298,16 @@ value, the old value is not clobbered."
       (when code
 	(setq code (nsublis goes code))))
 
-    (do ((unfinished t))
-	((not unfinished) (values aux prologs code))
-      (multiple-value-bind (bound unbound) (segregate-aux #'cddr aux)
-        (setq unbound (delete nil unbound))
-        (let ((suspicious (delete-aux-if-not #'(lambda (v)
-						    (let ((val (caddr v)))
-						      (or (symbolp val) ; Symbol macros should have already expanded
-							  (constantp val))))
-						bound)))
-          (setq goes (not-contained (mapauxn #'car suspicious)
-				    (mapauxn #'caddr bound) prologs code))
-	  (setq unfinished goes)
-	  (setq aux (delete-aux-if #'(lambda (v) (member (car v) goes)) aux))
-	  (multiple-value-setq (suspicious goes)
-	    (not-contained-twice (mapauxn #'car unbound)
-				 (mapauxn #'caddr aux) prologs code))
-	  (setq suspicious (set-difference suspicious goes))
-	  (when suspicious
-	    (setq suspicious (clean-code1 suspicious prologs code))
-	    (setq goes (nconc goes suspicious)))  
-	  (when goes
-	    (setq unfinished goes)
-	    (setq aux (delete-aux-if #'(lambda (v) (member (car v) goes)) aux))))))))
+    (let ((suspicious (not-contained (mapauxn #'car aux) prologs code)))
+      (when suspicious 
+        (setq aux (delete-aux-if #'(lambda (v) (member (car v) suspicious)) aux)))
+      (multiple-value-setq (suspicious goes)
+	(not-contained-twice (mapauxn #'car aux) prologs code))
+      (setq suspicious (set-difference suspicious goes))
+      (when suspicious
+	(setq suspicious (clean-code1 suspicious prologs code))
+	(setq goes (nconc goes suspicious)))
+      (values (delete-aux-if #'(lambda (v) (member (car v) goes)) aux) prologs code))))
 
 (defun propagate-types (expr aux &optional (input-info nil))
   (do ((tt expr (cdr tt)))
@@ -4452,7 +4362,13 @@ value, the old value is not clobbered."
 
   (defun codify-2 (aux prologs code)
     (multiple-value-bind (binds decls localdecls) (compute-binds-and-decls aux)
-      (destarrify 'let binds decls localdecls prologs code #'identity t)))
+      (multiple-value-bind (body wrapped-p)
+        (declarize #'identity (delete nil decls) (delete nil localdecls) prologs code t nil)
+	(if binds
+	    (funcall (lister wrapped-p) 'let binds body)
+	  (if wrapped-p
+	      (prognize body)
+	    body)))))
 
   (defun codify-1 (aux prologs code)
     (multiple-value-call #'codify-2 (clean-code aux prologs code)))
@@ -5582,6 +5498,11 @@ value, the old value is not clobbered."
            (prologs (prolog frag))
 	   (code (body frag))
 	   (wrps (wrappers frag)))
+    (progn
+      (setq code (prolog-append prologs code))				  
+      (setq prologs nil))
+    (when wrps
+      (setq code (wrap-code wrps code)))
     (let ((last-form (car (last (if code code (last-prolog-block prologs))))))
       (if (and rets (null (cdr rets)))
 	  (let ((r (car rets)))
@@ -5590,15 +5511,12 @@ value, the old value is not clobbered."
 		   (if code
 		       (setq code (delete last-form code))
 		     (setq prologs (delete-last-prolog prologs)))
-		   (when (and (not (contains-p r code))
-			      (not (contains-p r prologs)))
+		   (when (and (not (contains-p r code)))
 		     (setq aux (delete-aux r aux)))
 		   (setq rets (caddr last-form)))
 		  (t (setq rets r))))
 	(setq rets `(values ,@ rets))))
     (setq code (codify-1 aux prologs (nconc code (list rets))))
-    (when wrps
-      (setq code (car (wrap-code wrps (list code)))))
     (use-user-names aux code)
     (when *lift-out-vars-p*
       (setf code (lift-out-vars code)))
@@ -6126,10 +6044,20 @@ value, the old value is not clobbered."
 ) ;end of eval-when for fragl-1
 
 (defmacro fragl (&rest stuff)
-  (fragl-1 stuff))
+  (let ((a (caddr stuff)))
+    (apply #'fragl-1
+	   (car stuff) (cadr stuff) (simplify-aux a)  (cadddr stuff)
+	   (nconc (aux->prolog a) (car (cddddr stuff)))
+	   (cdr (cddddr stuff))	   
+	   )))
 
 (defmacro *fragl (&rest stuff)
-  (*fragl-1 stuff))
+  (let ((a (caddr stuff)))
+    (apply #'*fragl-1
+	   (car stuff) (cadr stuff) (simplify-aux a)  (cadddr stuff)
+	   (nconc (aux->prolog a) (car (cddddr stuff)))
+	   (cdr (cddddr stuff))	   
+	   )))
 
 ;;;;                          ---- COLLECT ----
 

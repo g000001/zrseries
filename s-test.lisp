@@ -243,7 +243,7 @@
 	  ((eql (car excl:arglist) 'simple-base-string)
 	   (setf (car excl:arglist) '(simple-array base-char (*))))))
 
-  (series::install)
+  (seriesi::install)
 ) ; end of eval-when
 
 (defvar *test* nil "Current test name")

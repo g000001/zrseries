@@ -136,12 +136,12 @@
   (require :sb-cltl2))
 
 (defpackage #:series
-    (:use #:cl)
+  (:use)
   (:export 
    ;;(2) readmacros (#M and #Z)
 
    ;;(5) declarations and types (note dual meaning of series)
-   #:optimizable-series-function  #:off-line-port  ;series
+   #:optimizable-series-function  #:off-line-port ;series
    #:series-element-type  #:propagate-alterability
    #:indefinite-extent
    
@@ -169,17 +169,24 @@
    #:catenate #:split #:split-if #:producing #:chunk
 
    ;;(5) variables
-    #:*series-expression-cache*
-    #:*last-series-loop*
-    #:*last-series-error*
-    #:*suppress-series-warnings*
-    )
-  (:shadow
+   #:*series-expression-cache*
+   #:*last-series-loop*
+   #:*last-series-error*
+   #:*suppress-series-warnings*
+   ;;(6) common-lisp symbols
    #:let #:let* #:multiple-value-bind #:funcall #:defun
-   #+(or cmu scl) #:collect #+(or cmu scl) #:iterate)
+   ))
+
+
+(defpackage #:series-internals
+  (:use #:cl #:series)
+  (:nicknames #:seriesi)
+  (:shadowing-import-from #:cl
+                          #:let #:let* #:multiple-value-bind #:funcall #:defun)
+  (:shadow #+(or cmu scl) #:collect #+(or cmu scl) #:iterate)
   #+Harlequin-Common-Lisp
   (:import-from "LISPWORKS" "COMPILER-LET")
-  #+(or Genera abcl)
+  #+abcl
   (:import-from "LISP" "COMPILER-LET")
   #+allegro
   (:import-from #:excl #:compiler-let)
@@ -193,4 +200,4 @@
   (:import-from "SB-CLTL2" "COMPILER-LET")
   #+ecl
   (:import-from "SI" "COMPILER-LET")
-)
+  )
