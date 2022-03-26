@@ -13,7 +13,8 @@
     :version "2.2.11"
     :serial t
     :components ((:file "s-package")
-                 (:file "s-code")))
+                 (:file "s-code")
+                 (:file "lets")))
 
 (defmethod perform ((op test-op) (c (eql (find-system :zrseries))))
   (oos 'test-op 'zrseries-tests))

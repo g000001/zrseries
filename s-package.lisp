@@ -175,7 +175,14 @@
    #:*suppress-series-warnings*
    ;;(6) common-lisp symbols
    #:let #:let* #:multiple-value-bind #:funcall #:defun
-   ))
+   )
+  ;; LetS
+  (:export
+   defunS Ealist Efile Elist Elist* Eplist Erange Esublists
+   Evector Fgreater Fpositive Fselect Glist Grange Gsequence Gsublist LetS*
+   mapS
+   Rappend Rbag Rcount Reqset Rfile Rignore Rlast Rlist Rnconc Rset Rsum Rvector
+   Tselect))
 
 
 (defpackage #:zrseries-internals
