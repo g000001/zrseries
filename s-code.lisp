@@ -3070,8 +3070,9 @@ value, the old value is not clobbered."
   "special forms that can be treated like ordinary functions.
    e.g., they have the same template as expr-template.")
 
-(defun not-expr-like-special-form-p (sym)
-  (and (special-operator-p sym)
+(defun not-expr-like-special-operator-p (sym)
+  (and (symbolp sym)
+       (special-operator-p sym)
        (not (member sym /expr-like-special-forms/))))
 
 (defun m-&-r2 (code template)
@@ -3092,7 +3093,7 @@ value, the old value is not clobbered."
                (template (and (symbolp head) (get head 'scan-template))))
           ;;(format t "code = ~A~%" code)
           (when (or (member head /fexprs-not-handled/)
-                    (and (not-expr-like-special-form-p head) (null template))
+                    (and (not-expr-like-special-operator-p head) (null template))
                     (and *in-series-expr* (eq head 'multiple-value-call)))
             (rrs 6 "~%The form " head " not allowed in SERIES expressions."))
           #+nil
@@ -3204,7 +3205,7 @@ value, the old value is not clobbered."
     (labels ((map-exp0 (exp)            ;can assume exp contains vars
                (cond ((symbolp exp) exp)
                      ((eq (car exp) 'if) exp)
-                     ((not-expr-like-special-form-p (car exp))
+                     ((not-expr-like-special-operator-p (car exp))
                       (ers 99 "~%Implicit mapping cannot be applied to the special form "
                            (car exp)))
                      (t `(,(car exp)
@@ -6535,7 +6536,7 @@ be a proper subtype of sequence.  If omitted, TYPE defaults to LIST. "
               (setq pred (get (car code) 'returns-series))
               (cond (pred
                      (return (funcall pred code)))
-                    ((not-expr-like-special-form-p (car code))
+                    ((not-expr-like-special-operator-p (car code))
                      (return nil))
                     ((not (macro-function (car code)))
                      (return (some #'produces-optimizable-series (cdr code))))
