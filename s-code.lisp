@@ -1904,7 +1904,7 @@ value, the old value is not clobbered."
                   (remove nil))
   (setq *series-implicit-map* implicit-map)
   (when (not (packagep pkg)) (setq pkg (find-package pkg)))
-  (let ((spkg (find-package :series)))
+  (let ((spkg (find-package :zrseries)))
     (when (not remove)
       (when macro
         (set-dispatch-macro-character #\# #\Z (function series-reader))
